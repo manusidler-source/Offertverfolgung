@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E9ECEE">
+<title>Offertenverfolgung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9ECEE;
+  --card:#FBFBF9;
+  --ink:#16232B;
+  --ink-soft:#5A6B75;
+  --line:#CDD5D9;
+  --accent:#1F4D7A;
+  --s1:#2E7D6B;
+  --s2:#C0870F;
+  --s3:#B23A2E;
+  --won:#2E7D6B;
+  --lost:#8A949A;
+  --r:10px;
+  --pad:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.45;
+  -webkit-text-size-adjust:100%;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- Kopf ---------- */
+header{
+  position:sticky;top:0;z-index:30;
+  background:var(--paper);
+  border-bottom:1px solid var(--line);
+  padding:calc(12px + env(safe-area-inset-top)) var(--pad) 0;
+}
+.head-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;max-width:900px;margin:0 auto}
+h1{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0}
+.head-meta{font-size:13px;color:var(--ink-soft)}
+.tools{max-width:900px;margin:10px auto 0;display:flex;gap:8px;align-items:center}
+.search{
+  flex:1;min-width:0;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r);padding:9px 12px;font-size:15px;
+}
+.search::placeholder{color:#93A0A8}
+.chips{max-width:900px;margin:10px auto 0;display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  white-space:nowrap;background:transparent;border:1px solid var(--line);
+  border-radius:999px;padding:6px 13px;font-size:14px;color:var(--ink-soft);
+}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:500}
+.chip .cnt{opacity:.65;margin-left:5px;font-variant-numeric:tabular-nums}
+
+/* ---------- Heute-Leiste ---------- */
+main{max-width:900px;margin:0 auto;padding:0 var(--pad)}
+.today{
+  margin:14px 0 4px;border-left:4px solid var(--s3);background:var(--card);
+  border-radius:0 var(--r) var(--r) 0;padding:12px 14px;
+}
+.today h2{font-size:15px;margin:0 0 6px;font-weight:600}
+.today ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-soft)}
+.today li{margin:2px 0}
+.today li b{color:var(--ink);font-weight:600}
+
+/* ---------- Liste ---------- */
+.list{margin:14px 0;display:flex;flex-direction:column;gap:12px}
+.offer{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px;
+}
+.offer.won{border-left:4px solid var(--won)}
+.offer.lost{opacity:.62;border-left:4px solid var(--lost)}
+.o-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.o-kunde{font-weight:600;font-size:17px;letter-spacing:-.01em}
+.o-projekt{font-size:14px;color:var(--ink-soft);margin-top:1px}
+.o-betrag{font-weight:600;font-size:16px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.o-sub{font-size:13px;color:var(--ink-soft);margin-top:6px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-size:12px}
+.tag.won{border-color:var(--won);color:var(--won)}
+.tag.lost{border-color:var(--lost);color:var(--lost)}
+.pdf-link{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(31,77,122,.35)}
+
+/* ---------- Erinnerungsbalken ---------- */
+.bars{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+.bar-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.bar-btn{
+  grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:3px 10px;
+  align-items:center;background:none;border:0;padding:4px 0;text-align:left;width:100%;
+}
+.bar-label{font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+.bar-date{font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink-soft);white-space:nowrap}
+.track{grid-column:1/-1;height:9px;border-radius:5px;background:#DDE3E6;overflow:hidden;position:relative}
+.fill{height:100%;width:0;border-radius:5px;transition:width .4s ease}
+.st1 .fill{background:var(--s1)} .st2 .fill{background:var(--s2)} .st3 .fill{background:var(--s3)}
+.bar-btn.done .fill{background:repeating-linear-gradient(135deg,#AEB9BF 0 5px,#C3CCD1 5px 10px)}
+.bar-btn.done .bar-label,.bar-btn.done .bar-date{text-decoration:line-through;opacity:.65}
+.bar-btn.overdue .bar-date{color:var(--s3);font-weight:600}
+.bar-btn.overdue .track{box-shadow:0 0 0 2px rgba(178,58,46,.25)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.st1 .dot{background:var(--s1)} .st2 .dot{background:var(--s2)} .st3 .dot{background:var(--s3)}
+
+.o-actions{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+.act{
+  background:transparent;border:1px solid var(--line);border-radius:8px;
+  padding:6px 11px;font-size:13.5px;color:var(--ink);
+}
+.act:hover{background:#EFF2F3}
+.act.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.act.danger{color:var(--s3);border-color:#E0C4C0}
+
+.empty{
+  text-align:center;padding:48px 20px;color:var(--ink-soft);
+  border:1px dashed var(--line);border-radius:var(--r);margin:16px 0;
+}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:6px}
+
+/* ---------- Fussleiste / Aktionen ---------- */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  display:flex;gap:10px;justify-content:center;align-items:center;
+  padding:10px var(--pad) calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--paper) 65%,rgba(233,236,238,0));
+}
+.dock button{
+  border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:#fff;
+  padding:13px 20px;font-size:15px;font-weight:600;box-shadow:0 3px 12px rgba(22,35,43,.18);
+}
+.dock .ghost{background:var(--card);color:var(--ink);border-color:var(--line)}
+.dock .mic[data-on="true"]{background:var(--s3);border-color:var(--s3)}
+
+/* ---------- Dialoge ---------- */
+dialog{
+  border:0;padding:0;border-radius:14px;background:var(--card);color:var(--ink);
+  width:min(560px,94vw);max-height:88vh;
+}
+dialog::backdrop{background:rgba(22,35,43,.45)}
+.d-in{padding:20px;overflow:auto;max-height:88vh}
+.d-in h2{margin:0 0 14px;font-size:19px;font-weight:700;letter-spacing:-.01em}
+label{display:block;font-size:13.5px;color:var(--ink-soft);margin:12px 0 4px}
+input[type=text],input[type=number],input[type=date],textarea,select{
+  width:100%;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;
+}
+textarea{min-height:70px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.d-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.hint{font-size:13px;color:var(--ink-soft);margin-top:6px;line-height:1.4}
+.file-drop{
+  border:1px dashed var(--line);border-radius:8px;padding:14px;text-align:center;font-size:14px;
+  color:var(--ink-soft);background:#fff;
+}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));
+  background:var(--ink);color:#fff;padding:11px 16px;border-radius:999px;font-size:14.5px;
+  z-index:60;max-width:90vw;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.2)
+}
+.cmd-list{font-size:14px;color:var(--ink-soft);margin:8px 0 0;padding-left:18px}
+.cmd-list li{margin:5px 0}
+.cmd-list code{background:#EDF0F1;padding:1px 5px;border-radius:4px;font-size:13px;color:var(--ink)}
+.warn{background:#FBF0DF;border:1px solid #E6CE9E;border-radius:8px;padding:10px 12px;font-size:13.5px;margin:12px 0}
+.live{font-size:15px;min-height:24px;margin-top:10px;color:var(--accent);font-weight:500}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (min-width:700px){ .list{gap:14px} h1{font-size:26px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-row">
+    <h1>Offerten</h1>
+    <div class="head-meta" id="headMeta"></div>
+  </div>
+  <div class="tools">
+    <input class="search" id="search" type="text" placeholder="Kunde oder Projekt suchen" aria-label="Suchen">
+    <button class="chip" id="btnSettings" aria-label="Einstellungen">Einstellungen</button>
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="Filter"></div>
+</header>
+
+<main>
+  <div class="today" id="today" hidden></div>
+  <div class="list" id="list"></div>
+</main>
+
+<div class="dock">
+  <button class="ghost mic" id="btnMic" data-on="false">Sprechen</button>
+  <button id="btnNew">Neue Offerte</button>
+</div>
+
+<!-- Offerte erfassen / bearbeiten -->
+<dialog id="dlgOffer"><div class="d-in">
+  <h2 id="dlgOfferTitle">Neue Offerte</h2>
+  <label for="fKunde">Kunde</label>
+  <input type="text" id="fKunde" autocomplete="off">
+  <label for="fProjekt">Projekt</label>
+  <input type="text" id="fProjekt" autocomplete="off">
+  <div class="grid2">
+    <div>
+      <label for="fBetrag">Betrag (CHF)</label>
+      <input type="number" id="fBetrag" inputmode="decimal" step="0.05" min="0">
+    </div>
+    <div>
+      <label for="fDatum">Offerte versendet am</label>
+      <input type="date" id="fDatum">
+    </div>
+  </div>
+  <label for="fStatus">Status</label>
+  <select id="fStatus">
+    <option value="offen">Offen</option>
+    <option value="gewonnen">Gewonnen</option>
+    <option value="verloren">Verloren</option>
+  </select>
+  <label for="fNotiz">Notiz</label>
+  <textarea id="fNotiz" placeholder="Ansprechperson, Telefon, was besprochen wurde"></textarea>
+
+  <label>Erinnerungen</label>
+  <div class="grid2">
+    <div><label for="fR1" style="margin-top:0">1. Nachfassen</label><input type="date" id="fR1"></div>
+    <div><label for="fR2" style="margin-top:0">2. Nachfassen</label><input type="date" id="fR2"></div>
+  </div>
+  <label for="fR3" style="margin-top:8px">Letzte Frist</label>
+  <input type="date" id="fR3">
+  <p class="hint">Leer lassen, dann werden die Termine aus dem Versanddatum berechnet.</p>
+
+  <label>PDF der Offerte</label>
+  <div class="file-drop">
+    <input type="file" id="fPdf" accept="application/pdf,.pdf">
+    <div class="hint" id="pdfInfo">Wird in der App gespeichert und lässt sich später öffnen.</div>
+  </div>
+
+  <div class="d-actions">
+    <button class="act danger" id="btnDelete" hidden>Löschen</button>
+    <button class="act" id="btnCancel">Abbrechen</button>
+    <button class="act primary" id="btnSave">Speichern</button>
+  </div>
+</div></dialog>
+
+<!-- Sprache -->
+<dialog id="dlgVoice"><div class="d-in">
+  <h2>Sprachsteuerung</h2>
+  <div id="voiceStatus" class="hint">Bereit.</div>
+  <div class="live" id="voiceLive" aria-live="polite"></div>
+  <label for="cmdText">Oder Befehl tippen</label>
+  <input type="text" id="cmdText" placeholder="neue offerte müller dachsanierung 12500">
+  <ul class="cmd-list">
+    <li><code>neue offerte Müller Dachsanierung 12500</code> – legt eine Offerte an</li>
+    <li><code>suche Müller</code> – filtert die Liste</li>
+    <li><code>zeige fällig</code> / <code>zeige offen</code> / <code>zeige alle</code></li>
+    <li><code>erledigt Müller</code> – hakt die nächste Erinnerung ab</li>
+    <li><code>gewonnen Müller</code> / <code>verloren Müller</code></li>
+    <li><code>verschiebe Müller 7 Tage</code></li>
+  </ul>
+  <div class="d-actions">
+    <button class="act" id="btnCmdRun">Befehl ausführen</button>
+    <button class="act primary" id="btnVoiceClose">Schliessen</button>
+  </div>
+</div></dialog>
+
+<!-- Einstellungen -->
+<dialog id="dlgSettings"><div class="d-in">
+  <h2>Einstellungen</h2>
+  <label>Standard-Abstände für neue Offerten (Tage nach Versand)</label>
+  <div class="grid2">
+    <div><label for="sO1" style="margin-top:0">1. Nachfassen</label><input type="number" id="sO1" min="1" max="365"></div>
+    <div><label for="sO2" style="margin-top:0">2. Nachfassen</label><input type="number" id="sO2" min="1" max="365"></div>
+  </div>
+  <label for="sO3" style="margin-top:8px">Letzte Frist</label>
+  <input type="number" id="sO3" min="1" max="365">
+
+  <label for="sAbsender">Dein Name für Nachfass-Mails</label>
+  <input type="text" id="sAbsender" placeholder="z. B. Peter Meier, Meier Bau GmbH">
+
+  <label style="margin-top:16px">Kalender auf dem Handy</label>
+  <label for="sAlarm" style="margin-top:6px">Uhrzeit der Alarme</label>
+  <input type="time" id="sAlarm">
+  <div class="d-actions" style="justify-content:flex-start;margin-top:10px">
+    <button class="act" id="btnIcsAll">Alle offenen Erinnerungen exportieren</button>
+  </div>
+  <p class="hint">Die Datei einmal auf dem Handy öffnen und in den Kalender übernehmen. Dein Telefon meldet sich dann selbst – auch wenn diese App geschlossen ist. Verschiebst du einen Termin, exportiere die Offerte erneut: der bestehende Eintrag wird aktualisiert, nicht verdoppelt.</p>
+
+  <label style="margin-top:16px">Benachrichtigungen im Browser</label>
+  <button class="act" id="btnNotify">Erinnerungen im Browser erlauben</button>
+  <p class="hint" id="notifyState"></p>
+  <div class="warn">Meldungen im Browser kommen nur, solange diese Seite geöffnet oder als App auf dem Startbildschirm aktiv ist. Der Kalenderweg oben ist verlässlicher. Für Mails an Kunden erzeugt die App einen fertigen Entwurf, den du in deinem Mailprogramm abschickst.</div>
+
+  <label style="margin-top:16px">Daten</label>
+  <div class="d-actions" style="justify-content:flex-start;margin-top:6px">
+    <button class="act" id="btnExport">Sicherung speichern</button>
+    <button class="act" id="btnImport">Sicherung laden</button>
+    <input type="file" id="fImport" accept="application/json,.json" hidden>
+  </div>
+  <p class="hint" id="storeState"></p>
+
+  <div class="d-actions">
+    <button class="act primary" id="btnSettingsClose">Fertig</button>
+  </div>
+</div></dialog>
+
+<script>
+/* ============ Speicher ============ */
+const mem = new Map();
+let storageOK = true;
+const Store = {
+  async get(key, def){
+    try{ const r = await window.storage.get(key); return r && r.value ? JSON.parse(r.value) : def; }
+    catch(e){ if(mem.has(key)) return mem.get(key); return def; }
+  },
+  async set(key, val){
+    mem.set(key, val);
+    try{ const r = await window.storage.set(key, JSON.stringify(val)); if(!r) throw new Error('leer'); storageOK = true; return true; }
+    catch(e){ storageOK = false; return false; }
+  },
+  async del(key){
+    mem.delete(key);
+    try{ await window.storage.delete(key); }catch(e){}
+  }
+};
+
+/* ============ Zustand ============ */
+let offers = [];
+let settings = { o1:5, o2:12, o3:25, absender:'', alarm:'08:00' };
+let filter = 'faellig';
+let query = '';
+let editId = null;
+let pendingPdf = null; // {name, size, data}
+
+const STAGE = [
+  {key:'r1', label:'1. Nachfassen', cls:'st1'},
+  {key:'r2', label:'2. Nachfassen', cls:'st2'},
+  {key:'r3', label:'Letzte Frist',  cls:'st3'}
+];
+
+/* ============ Helfer ============ */
+const $ = s => document.querySelector(s);
+const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const heute = () => iso(new Date());
+function addDays(isoStr, n){ const d = new Date(isoStr+'T12:00:00'); d.setDate(d.getDate()+n); return iso(d); }
+function tageBis(isoStr){
+  const a = new Date(heute()+'T12:00:00'), b = new Date(isoStr+'T12:00:00');
+  return Math.round((b-a)/86400000);
+}
+function fmtDatum(isoStr){
+  if(!isoStr) return '–';
+  const d = new Date(isoStr+'T12:00:00');
+  return d.toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+function fmtGeld(n){
+  if(n===''||n===null||isNaN(n)) return '';
+  return new Intl.NumberFormat('de-CH',{style:'currency',currency:'CHF',maximumFractionDigits:0}).format(n);
+}
+function uid(){ return 'o'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+let toastTimer;
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const el = document.createElement('div');
+  el.className = 'toast'; el.setAttribute('role','status'); el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.remove(), 3200);
+}
+
+/* ============ Fachlogik ============ */
+function neueErinnerungen(datum){
+  return {
+    r1:{ faellig: addDays(datum, settings.o1), erledigt:false, gemeldet:'' },
+    r2:{ faellig: addDays(datum, settings.o2), erledigt:false, gemeldet:'' },
+    r3:{ faellig: addDays(datum, settings.o3), erledigt:false, gemeldet:'' }
+  };
+}
+function offeneErinnerung(o){
+  if(o.status !== 'offen') return null;
+  for(const s of STAGE){ const r = o.rem[s.key]; if(r && !r.erledigt) return {stage:s, r}; }
+  return null;
+}
+function istFaellig(o){
+  const n = offeneErinnerung(o);
+  return !!n && tageBis(n.r.faellig) <= 0;
+}
+function fortschritt(o, key){
+  const r = o.rem[key];
+  if(!r || !r.faellig) return 0;
+  const start = new Date(o.datum+'T12:00:00').getTime();
+  const ende = new Date(r.faellig+'T12:00:00').getTime();
+  const jetzt = Date.now();
+  if(ende <= start) return 100;
+  return Math.max(0, Math.min(100, ((jetzt-start)/(ende-start))*100));
+}
+function suchTreffer(begriff){
+  const q = norm(begriff).trim();
+  if(!q) return null;
+  return offers.find(o => norm(o.kunde).includes(q) || norm(o.projekt).includes(q)) || null;
+}
+
+/* ============ Anzeige ============ */
+function zaehler(){
+  return {
+    faellig: offers.filter(istFaellig).length,
+    offen: offers.filter(o=>o.status==='offen').length,
+    gewonnen: offers.filter(o=>o.status==='gewonnen').length,
+    verloren: offers.filter(o=>o.status==='verloren').length,
+    alle: offers.length
+  };
+}
+function renderChips(){
+  const c = zaehler();
+  const defs = [
+    ['faellig','Fällig',c.faellig],
+    ['offen','Offen',c.offen],
+    ['alle','Alle',c.alle],
+    ['gewonnen','Gewonnen',c.gewonnen],
+    ['verloren','Verloren',c.verloren]
+  ];
+  $('#chips').innerHTML = defs.map(([k,l,n])=>
+    `<button class="chip" data-f="${k}" aria-pressed="${filter===k}">${l}<span class="cnt tnum">${n}</span></button>`
+  ).join('');
+  $('#chips').querySelectorAll('.chip').forEach(b=>{
+    b.onclick = ()=>{ filter = b.dataset.f; render(); };
+  });
+}
+function renderHeute(){
+  const el = $('#today');
+  const faellige = offers.filter(istFaellig)
+    .sort((a,b)=> tageBis(offeneErinnerung(a).r.faellig) - tageBis(offeneErinnerung(b).r.faellig));
+  if(!faellige.length){ el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `<h2>Heute nachfassen (${faellige.length})</h2><ul>` +
+    faellige.slice(0,5).map(o=>{
+      const n = offeneErinnerung(o); const d = tageBis(n.r.faellig);
+      const wann = d===0 ? 'heute' : `${Math.abs(d)} Tage überfällig`;
+      return `<li><b>${esc(o.kunde)}</b> – ${esc(n.stage.label)}, ${wann}</li>`;
+    }).join('') + '</ul>';
+}
+function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function renderList(){
+  let arr = offers.slice();
+  if(filter==='faellig') arr = arr.filter(istFaellig);
+  else if(filter!=='alle') arr = arr.filter(o=>o.status===filter);
+  if(query){ const q = norm(query); arr = arr.filter(o=> norm(o.kunde).includes(q) || norm(o.projekt).includes(q) || norm(o.notiz).includes(q)); }
+
+  arr.sort((a,b)=>{
+    const na = offeneErinnerung(a), nb = offeneErinnerung(b);
+    if(na && nb) return na.r.faellig.localeCompare(nb.r.faellig);
+    if(na) return -1; if(nb) return 1;
+    return b.datum.localeCompare(a.datum);
+  });
+
+  const list = $('#list');
+  if(!arr.length){
+    list.innerHTML = `<div class="empty"><b>${offers.length ? 'Hier ist gerade nichts' : 'Noch keine Offerte erfasst'}</b>
+      ${offers.length ? 'Wechsle den Filter oder leere die Suche.' : 'Erfasse deine erste Offerte und lade das PDF dazu.'}</div>`;
+    return;
+  }
+  list.innerHTML = arr.map(cardHTML).join('');
+  list.querySelectorAll('[data-act]').forEach(b=>{
+    b.onclick = e => { e.stopPropagation(); aktion(b.dataset.act, b.dataset.id, b.dataset.stage); };
+  });
+}
+
+function cardHTML(o){
+  const cls = o.status==='gewonnen' ? ' won' : (o.status==='verloren' ? ' lost' : '');
+  const tag = o.status==='gewonnen' ? '<span class="tag won">Gewonnen</span>'
+            : o.status==='verloren' ? '<span class="tag lost">Verloren</span>' : '';
+  const pdf = o.pdfName
+    ? `<button class="pdf-link act" style="border:0;padding:0;background:none" data-act="pdf" data-id="${o.id}">PDF öffnen</button>`
+    : '<span style="color:#93A0A8">Kein PDF</span>';
+
+  const bars = STAGE.map(s=>{
+    const r = o.rem[s.key];
+    const d = r.faellig ? tageBis(r.faellig) : null;
+    const overdue = !r.erledigt && o.status==='offen' && d!==null && d<=0;
+    const pct = r.erledigt ? 100 : fortschritt(o, s.key);
+    const wann = r.erledigt ? 'erledigt'
+      : d===null ? '–'
+      : d>0 ? `in ${d} T` : (d===0 ? 'heute' : `${Math.abs(d)} T überfällig`);
+    return `<button class="bar-btn ${s.cls}${r.erledigt?' done':''}${overdue?' overdue':''}"
+        data-act="toggle" data-id="${o.id}" data-stage="${s.key}"
+        aria-label="${esc(s.label)} am ${fmtDatum(r.faellig)}, ${wann}. Antippen zum Abhaken.">
+      <span class="bar-label"><span class="dot"></span>${s.label}</span>
+      <span class="bar-date tnum">${fmtDatum(r.faellig)} · ${wann}</span>
+      <span class="track"><span class="fill" style="width:${pct}%"></span></span>
+    </button>`;
+  }).join('');
+
+  return `<article class="offer${cls}">
+    <div class="o-top">
+      <div>
+        <div class="o-kunde">${esc(o.kunde)}</div>
+        <div class="o-projekt">${esc(o.projekt) || 'Ohne Projektbezeichnung'}</div>
+      </div>
+      <div class="o-betrag">${fmtGeld(o.betrag)}</div>
+    </div>
+    <div class="o-sub">
+      <span>Versendet ${fmtDatum(o.datum)}</span>${tag}${pdf}
+    </div>
+    <div class="bars">${bars}</div>
+    <div class="o-actions">
+      <button class="act" data-act="mail" data-id="${o.id}">Nachfass-Mail</button>
+      <button class="act" data-act="ics" data-id="${o.id}">In den Kalender</button>
+      <button class="act" data-act="snooze" data-id="${o.id}">+7 Tage</button>
+      ${o.status==='offen' ? `<button class="act" data-act="won" data-id="${o.id}">Gewonnen</button>
+      <button class="act" data-act="lost" data-id="${o.id}">Verloren</button>` :
+      `<button class="act" data-act="reopen" data-id="${o.id}">Wieder offen</button>`}
+      <button class="act" data-act="edit" data-id="${o.id}">Bearbeiten</button>
+    </div>
+  </article>`;
+}
+
+function render(){
+  const c = zaehler();
+  $('#headMeta').textContent = `${c.offen} offen · ${c.faellig} fällig`;
+  renderChips(); renderHeute(); renderList();
+}
+
+/* ============ Aktionen ============ */
+async function aktion(act, id, stage){
+  const o = offers.find(x=>x.id===id); if(!o) return;
+  if(act==='toggle'){
+    const r = o.rem[stage];
+    r.erledigt = !r.erledigt;
+    if(r.erledigt) r.erledigtAm = heute();
+    toast(r.erledigt ? 'Erinnerung abgehakt' : 'Erinnerung wieder offen');
+  }
+  else if(act==='snooze'){
+    const n = offeneErinnerung(o);
+    if(!n){ toast('Keine offene Erinnerung'); return; }
+    n.r.faellig = addDays(n.r.faellig, 7); n.r.gemeldet = '';
+    toast(`${n.stage.label} auf ${fmtDatum(n.r.faellig)} verschoben`);
+  }
+  else if(act==='won'){ o.status='gewonnen'; toast('Als gewonnen markiert'); }
+  else if(act==='lost'){ o.status='verloren'; toast('Als verloren markiert'); }
+  else if(act==='reopen'){ o.status='offen'; toast('Offerte wieder offen'); }
+  else if(act==='edit'){ oeffneDialog(o); return; }
+  else if(act==='mail'){ mailEntwurf(o); return; }
+  else if(act==='ics'){ kalenderExport([o], `erinnerungen-${o.kunde}`); return; }
+  else if(act==='pdf'){ pdfOeffnen(o); return; }
+  await speichern(); render();
+}
+
+function mailEntwurf(o){
+  const n = offeneErinnerung(o);
+  const stufe = n ? n.stage.label : 'Nachfassen';
+  const betreff = `Offerte ${o.projekt || o.kunde} vom ${fmtDatum(o.datum)}`;
+  const text =
+`Guten Tag
+
+am ${fmtDatum(o.datum)} haben wir Ihnen unsere Offerte für ${o.projekt || 'das besprochene Projekt'}${o.betrag?` über ${fmtGeld(o.betrag)}`:''} zugestellt.
+
+Gerne erkundige ich mich, ob Sie noch Fragen dazu haben oder weitere Angaben brauchen.
+
+Freundliche Grüsse
+${settings.absender || ''}`;
+  window.open(`mailto:?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(text)}`, '_blank');
+  toast(`Mailentwurf für ${stufe} erstellt`);
+}
+
+/* ============ Kalender (.ics) ============ */
+function icsText(s){ return (s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
+function icsFold(line){
+  const teile = []; let s = line;
+  while(s.length > 73){ teile.push(s.slice(0,73)); s = ' ' + s.slice(73); }
+  teile.push(s); return teile.join('\r\n');
+}
+function icsStamp(){ return new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z'; }
+function icsZeit(datum, hhmm){ return datum.replace(/-/g,'') + 'T' + hhmm.replace(':','') + '00'; }
+function plusMinuten(hhmm, min){
+  const [h,m] = hhmm.split(':').map(Number);
+  const t = (h*60 + m + min) % 1440;
+  return String(Math.floor(t/60)).padStart(2,'0') + ':' + String(t%60).padStart(2,'0');
+}
+
+async function kalenderExport(liste, dateiname){
+  const alarm = settings.alarm || '08:00';
+  const zeilen = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Offertenverfolgung//DE','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  let anzahl = 0;
+
+  for(const o of liste){
+    if(o.status !== 'offen') continue;
+    let hatTermin = false;
+    for(const s of STAGE){
+      const r = o.rem[s.key];
+      if(!r || !r.faellig || r.erledigt) continue;
+      hatTermin = true; anzahl++;
+      const titelZeile = `${s.label}: ${o.kunde}`;
+      const beschreibung = [
+        o.projekt,
+        o.betrag !== '' ? fmtGeld(o.betrag) : '',
+        `Offerte versendet am ${fmtDatum(o.datum)}`,
+        o.notiz
+      ].filter(Boolean).join('\n');
+      zeilen.push(
+        'BEGIN:VEVENT',
+        `UID:${o.id}-${s.key}@offertenverfolgung`,
+        'DTSTAMP:' + icsStamp(),
+        'SEQUENCE:' + ((o.icsSeq||0) + 1),
+        icsFold('SUMMARY:' + icsText(titelZeile)),
+        'DTSTART:' + icsZeit(r.faellig, alarm),
+        'DTEND:' + icsZeit(r.faellig, plusMinuten(alarm, 30)),
+        icsFold('DESCRIPTION:' + icsText(beschreibung)),
+        'BEGIN:VALARM','ACTION:DISPLAY','TRIGGER:PT0S',
+        icsFold('DESCRIPTION:' + icsText(titelZeile)),
+        'END:VALARM','END:VEVENT'
+      );
+    }
+    if(hatTermin) o.icsSeq = (o.icsSeq||0) + 1;
+  }
+  zeilen.push('END:VCALENDAR');
+
+  if(!anzahl){ toast('Keine offenen Erinnerungen zum Eintragen'); return; }
+  const blob = new Blob([zeilen.join('\r\n')], {type:'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (dateiname || 'offerten-erinnerungen').replace(/[^\wäöüÄÖÜ -]/g,'').trim() + '.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 30000);
+  await speichern();
+  toast(`${anzahl} ${anzahl===1?'Termin':'Termine'} zum Kalender – Datei öffnen und übernehmen`);
+}
+
+async function pdfOeffnen(o){
+  const data = await Store.get('pdf:'+o.id, null);
+  if(!data){ toast('PDF nicht mehr vorhanden'); return; }
+  try{
+    const bin = atob(data);
+    const bytes = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], {type:'application/pdf'}));
+    const w = window.open(url, '_blank');
+    if(!w){ const a=document.createElement('a'); a.href=url; a.download=o.pdfName||'offerte.pdf'; a.click(); }
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }catch(e){ toast('PDF konnte nicht geöffnet werden'); }
+}
+
+/* ============ Dialog Offerte ============ */
+function oeffneDialog(o){
+  editId = o ? o.id : null;
+  pendingPdf = null;
+  $('#dlgOfferTitle').textContent = o ? 'Offerte bearbeiten' : 'Neue Offerte';
+  $('#fKunde').value = o ? o.kunde : '';
+  $('#fProjekt').value = o ? o.projekt : '';
+  $('#fBetrag').value = o && o.betrag!=='' ? o.betrag : '';
+  $('#fDatum').value = o ? o.datum : heute();
+  $('#fStatus').value = o ? o.status : 'offen';
+  $('#fNotiz').value = o ? o.notiz : '';
+  $('#fR1').value = o ? o.rem.r1.faellig : '';
+  $('#fR2').value = o ? o.rem.r2.faellig : '';
+  $('#fR3').value = o ? o.rem.r3.faellig : '';
+  $('#fPdf').value = '';
+  $('#pdfInfo').textContent = o && o.pdfName ? `Gespeichert: ${o.pdfName}` : 'Wird in der App gespeichert und lässt sich später öffnen.';
+  $('#btnDelete').hidden = !o;
+  $('#dlgOffer').showModal();
+  setTimeout(()=>$('#fKunde').focus(), 50);
+}
+
+$('#fPdf').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  if(f.size > 4.5*1024*1024){ $('#pdfInfo').textContent = 'Diese Datei ist grösser als 4,5 MB und passt nicht in den Speicher. Bitte kleiner speichern.'; e.target.value=''; return; }
+  const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(f); });
+  pendingPdf = { name:f.name, size:f.size, data:b64 };
+  $('#pdfInfo').textContent = `${f.name} · ${(f.size/1024/1024).toFixed(1)} MB – wird beim Speichern übernommen`;
+  if(!$('#fProjekt').value) $('#fProjekt').value = f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ');
+});
+
+$('#btnSave').onclick = async ()=>{
+  const kunde = $('#fKunde').value.trim();
+  if(!kunde){ $('#fKunde').focus(); toast('Bitte den Kundennamen eintragen'); return; }
+  const datum = $('#fDatum').value || heute();
+  let o = offers.find(x=>x.id===editId);
+  if(!o){ o = { id: uid(), rem: neueErinnerungen(datum), pdfName:'' }; offers.unshift(o); }
+  o.kunde = kunde;
+  o.projekt = $('#fProjekt').value.trim();
+  o.betrag = $('#fBetrag').value === '' ? '' : Number($('#fBetrag').value);
+  o.datum = datum;
+  o.status = $('#fStatus').value;
+  o.notiz = $('#fNotiz').value.trim();
+  const std = neueErinnerungen(datum);
+  ['r1','r2','r3'].forEach((k,i)=>{
+    const v = $('#f'+('R'+(i+1))).value;
+    o.rem[k].faellig = v || std[k].faellig;
+  });
+  if(pendingPdf){
+    const ok = await Store.set('pdf:'+o.id, pendingPdf.data);
+    o.pdfName = ok ? pendingPdf.name : '';
+    if(!ok) toast('PDF konnte nicht gespeichert werden');
+  }
+  await speichern();
+  $('#dlgOffer').close(); render();
+  toast(editId ? 'Änderungen gespeichert' : 'Offerte angelegt');
+};
+$('#btnCancel').onclick = ()=> $('#dlgOffer').close();
+$('#btnDelete').onclick = async ()=>{
+  if(!confirm('Diese Offerte samt PDF löschen?')) return;
+  await Store.del('pdf:'+editId);
+  offers = offers.filter(x=>x.id!==editId);
+  await speichern(); $('#dlgOffer').close(); render(); toast('Offerte gelöscht');
+};
+
+/* ============ Sprachsteuerung ============ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, hoert = false;
+
+function sprich(text){
+  try{ const u = new SpeechSynthesisUtterance(text); u.lang='de-CH'; speechSynthesis.speak(u); }catch(e){}
+}
+function micToggle(){
+  if(!SR){
+    $('#dlgVoice').showModal();
+    $('#voiceStatus').textContent = 'Dieser Browser kennt keine Spracherkennung. In Chrome oder Safari funktioniert sie; hier kannst du den Befehl tippen.';
+    return;
+  }
+  if(hoert){ rec.stop(); return; }
+  rec = new SR();
+  rec.lang = 'de-CH'; rec.interimResults = true; rec.continuous = false;
+  rec.onstart = ()=>{ hoert = true; $('#btnMic').dataset.on='true'; $('#btnMic').textContent='Zuhören …'; $('#voiceStatus').textContent='Ich höre zu.'; };
+  rec.onresult = e=>{
+    let txt = '';
+    for(const r of e.results) txt += r[0].transcript;
+    $('#voiceLive').textContent = txt;
+    if(e.results[e.results.length-1].isFinal) befehl(txt);
+  };
+  rec.onerror = e=>{ $('#voiceStatus').textContent = e.error==='not-allowed' ? 'Das Mikrofon ist gesperrt. Erlaube den Zugriff in den Browsereinstellungen.' : 'Nichts verstanden. Versuch es noch einmal.'; };
+  rec.onend = ()=>{ hoert=false; $('#btnMic').dataset.on='false'; $('#btnMic').textContent='Sprechen'; };
+  $('#dlgVoice').showModal();
+  $('#voiceLive').textContent = '';
+  rec.start();
+}
+
+async function befehl(rohtext){
+  const t = norm(rohtext).replace(/\s+/g,' ').trim();
+  if(!t) return;
+  let antwort = '';
+
+  // neue offerte <kunde> <projekt> <betrag>
+  let m = t.match(/^(?:neue?|erfasse|anlegen|neue offerte|offerte)\s+(?:offerte\s+)?(?:fuer\s+|für\s+)?(.+)$/);
+  if(m && /^(neue|erfasse|anlegen|offerte)/.test(t)){
+    let rest = m[1];
+    let betrag = '';
+    const bm = rest.match(/(\d[\d'’.\s]*\d|\d+)\s*(franken|chf|fr\.?)?\s*$/);
+    if(bm){ betrag = Number(bm[1].replace(/[^\d.]/g,'')); rest = rest.slice(0, bm.index).trim(); }
+    const worte = rest.split(' ').filter(Boolean);
+    const kunde = worte.slice(0, Math.min(2, worte.length)).join(' ');
+    const projekt = worte.slice(Math.min(2, worte.length)).join(' ');
+    const datum = heute();
+    offers.unshift({ id:uid(), kunde:titel(kunde), projekt:titel(projekt), betrag: betrag===''?'':betrag,
+      datum, status:'offen', notiz:'Per Sprache erfasst', rem:neueErinnerungen(datum), pdfName:'' });
+    antwort = `Offerte für ${titel(kunde)} angelegt.`;
+  }
+  else if((m = t.match(/^(?:suche|such|finde)\s+(.+)$/))){
+    query = m[1]; filter = 'alle'; $('#search').value = m[1];
+    antwort = `Suche nach ${m[1]}.`;
+  }
+  else if((m = t.match(/^(?:zeige|zeig)\s+(.+)$/))){
+    const w = m[1];
+    filter = /faell|fall|heute|dringend/.test(w) ? 'faellig'
+      : /gewonn/.test(w) ? 'gewonnen'
+      : /verlor/.test(w) ? 'verloren'
+      : /offen/.test(w) ? 'offen' : 'alle';
+    query = ''; $('#search').value = '';
+    antwort = `Filter gesetzt.`;
+  }
+  else if((m = t.match(/^(?:erledigt|abgehakt|abhaken|erledige)\s+(.+)$/))){
+    const o = suchTreffer(m[1]);
+    if(!o){ antwort = `Ich finde keine Offerte für ${m[1]}.`; }
+    else{
+      const n = offeneErinnerung(o);
+      if(!n) antwort = `Bei ${o.kunde} ist nichts mehr offen.`;
+      else { n.r.erledigt = true; n.r.erledigtAm = heute(); antwort = `${n.stage.label} bei ${o.kunde} abgehakt.`; }
+    }
+  }
+  else if((m = t.match(/^(gewonnen|verloren)\s+(.+)$/))){
+    const o = suchTreffer(m[2]);
+    if(!o) antwort = `Ich finde keine Offerte für ${m[2]}.`;
+    else { o.status = m[1]; antwort = `${o.kunde} ist ${m[1]}.`; }
+  }
+  else if((m = t.match(/^(?:verschiebe|verschieb)\s+(.+?)\s+(?:um\s+)?(\d+)\s*tag/))){
+    const o = suchTreffer(m[1]);
+    if(!o) antwort = `Ich finde keine Offerte für ${m[1]}.`;
+    else{
+      const n = offeneErinnerung(o);
+      if(!n) antwort = `Bei ${o.kunde} ist nichts offen.`;
+      else { n.r.faellig = addDays(n.r.faellig, Number(m[2])); n.r.gemeldet=''; antwort = `${o.kunde} auf ${fmtDatum(n.r.faellig)} verschoben.`; }
+    }
+  }
+  else{
+    antwort = 'Das habe ich nicht verstanden. Sag zum Beispiel: neue Offerte Müller Dachsanierung 12500.';
+  }
+
+  await speichern(); render();
+  $('#voiceStatus').textContent = antwort;
+  toast(antwort);
+  sprich(antwort);
+}
+function titel(s){ return s.replace(/\b[a-zäöü]/g, c=>c.toUpperCase()); }
+
+$('#btnMic').onclick = micToggle;
+$('#btnVoiceClose').onclick = ()=>{ if(hoert && rec) rec.stop(); $('#dlgVoice').close(); };
+$('#btnCmdRun').onclick = ()=>{ const v = $('#cmdText').value; if(v){ befehl(v); $('#cmdText').value=''; } };
+$('#cmdText').addEventListener('keydown', e=>{ if(e.key==='Enter'){ $('#btnCmdRun').click(); } });
+
+/* ============ Benachrichtigungen ============ */
+function notifyState(){
+  const el = $('#notifyState');
+  if(!('Notification' in window)){ el.textContent = 'Dieser Browser kann keine Meldungen anzeigen.'; return; }
+  el.textContent = Notification.permission === 'granted' ? 'Meldungen sind erlaubt.'
+    : Notification.permission === 'denied' ? 'Meldungen sind gesperrt. Du kannst das in den Browsereinstellungen ändern.'
+    : 'Noch nicht erlaubt.';
+}
+$('#btnNotify').onclick = async ()=>{
+  if(!('Notification' in window)) return;
+  await Notification.requestPermission(); notifyState(); pruefeErinnerungen();
+};
+async function pruefeErinnerungen(){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  let geaendert = false;
+  for(const o of offers){
+    const n = offeneErinnerung(o);
+    if(!n) continue;
+    if(tageBis(n.r.faellig) <= 0 && n.r.gemeldet !== heute()){
+      try{
+        new Notification(`${n.stage.label}: ${o.kunde}`, {
+          body: `${o.projekt || 'Offerte'} vom ${fmtDatum(o.datum)}${o.betrag?` · ${fmtGeld(o.betrag)}`:''}`,
+          tag: o.id + n.stage.key
+        });
+        n.r.gemeldet = heute(); geaendert = true;
+      }catch(e){}
+    }
+  }
+  if(geaendert) await speichern();
+}
+
+/* ============ Einstellungen & Daten ============ */
+$('#btnSettings').onclick = ()=>{
+  $('#sO1').value = settings.o1; $('#sO2').value = settings.o2; $('#sO3').value = settings.o3;
+  $('#sAbsender').value = settings.absender || '';
+  $('#sAlarm').value = settings.alarm || '08:00';
+  notifyState();
+  $('#storeState').textContent = storageOK
+    ? 'Deine Daten liegen in dieser App und bleiben beim nächsten Öffnen erhalten.'
+    : 'Achtung: Speichern klappt hier nicht. Nutze regelmässig „Sicherung speichern“.';
+  $('#dlgSettings').showModal();
+};
+$('#btnSettingsClose').onclick = async ()=>{
+  settings.o1 = Math.max(1, Number($('#sO1').value)||5);
+  settings.o2 = Math.max(1, Number($('#sO2').value)||12);
+  settings.o3 = Math.max(1, Number($('#sO3').value)||25);
+  settings.absender = $('#sAbsender').value.trim();
+  settings.alarm = $('#sAlarm').value || '08:00';
+  await Store.set('einstellungen', settings);
+  $('#dlgSettings').close(); render(); toast('Einstellungen gespeichert');
+};
+$('#btnIcsAll').onclick = async ()=>{
+  settings.alarm = $('#sAlarm').value || '08:00';
+  await Store.set('einstellungen', settings);
+  kalenderExport(offers, 'offerten-erinnerungen');
+};
+$('#btnExport').onclick = ()=>{
+  const blob = new Blob([JSON.stringify({offers, settings}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `offerten-sicherung-${heute()}.json`; a.click();
+  toast('Sicherung gespeichert (ohne PDF-Dateien)');
+};
+$('#btnImport').onclick = ()=> $('#fImport').click();
+$('#fImport').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const daten = JSON.parse(await f.text());
+    if(!Array.isArray(daten.offers)) throw new Error('Format');
+    offers = daten.offers.map(o=>({ pdfName:'', notiz:'', ...o }));
+    if(daten.settings) settings = {...settings, ...daten.settings};
+    await speichern(); await Store.set('einstellungen', settings);
+    render(); toast(`${offers.length} Offerten geladen`);
+  }catch(err){ toast('Diese Datei passt nicht. Erwartet wird eine Sicherung dieser App.'); }
+  e.target.value='';
+});
+
+/* ============ Start ============ */
+async function speichern(){ await Store.set('offerten', offers); }
+
+$('#btnNew').onclick = ()=> oeffneDialog(null);
+$('#search').addEventListener('input', e=>{ query = e.target.value; renderList(); });
+document.addEventListener('keydown', e=>{
+  if(e.key==='n' && (e.metaKey||e.ctrlKey)){ e.preventDefault(); oeffneDialog(null); }
+});
+
+(async function init(){
+  offers = await Store.get('offerten', []);
+  settings = {...settings, ...await Store.get('einstellungen', {})};
+  if(!offers.length){
+    const d1 = addDays(heute(), -18), d2 = addDays(heute(), -6), d3 = addDays(heute(), -31);
+    offers = [
+      { id:uid(), kunde:'Bäckerei Steiner', projekt:'Ladenumbau Verkaufsraum', betrag:24800, datum:d1, status:'offen', notiz:'Frau Steiner, 044 xxx xx xx', rem:neueErinnerungen(d1), pdfName:'' },
+      { id:uid(), kunde:'Immo Nordring AG', projekt:'Fassadensanierung Haus B', betrag:96500, datum:d3, status:'offen', notiz:'Verwaltung entscheidet im Vorstand', rem:neueErinnerungen(d3), pdfName:'' },
+      { id:uid(), kunde:'Familie Berger', projekt:'Badumbau OG', betrag:18200, datum:d2, status:'offen', notiz:'', rem:neueErinnerungen(d2), pdfName:'' }
+    ];
+    await speichern();
+  }
+  render();
+  pruefeErinnerungen();
+  setInterval(pruefeErinnerungen, 60000);
+  setInterval(render, 3600000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ render(); pruefeErinnerungen(); } });
+})();
+</script>
+</body>
+</html>
